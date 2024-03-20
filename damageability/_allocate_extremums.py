@@ -1,17 +1,40 @@
 import numpy as np
 
 from numpy.typing import NDArray
-from typing import Literal, Union, Tuple, List
+from typing import Literal, overload
+from annotated_types import Annotated, Ge
 
-from pydantic import validate_arguments
+
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@overload
 def allocate_extremums(
     values:NDArray, 
-    smoothing_value:float=0.0, 
+    smoothing_value:Annotated[float, Ge(0.0)]=..., 
+    result_type:Literal['indexes']=...,
+) -> NDArray: ...
+
+@overload
+def allocate_extremums(
+    values:NDArray, 
+    smoothing_value:Annotated[float, Ge(0.0)]=..., 
+    result_type:Literal['values']=...,
+) -> NDArray: ...
+
+@overload
+def allocate_extremums(
+    values:NDArray, 
+    smoothing_value:Annotated[float, Ge(0.0)]=..., 
+    result_type:Literal['both']=...,
+) -> tuple[NDArray,NDArray]: ...
+
+@validate_call(config=dict(arbitrary_types_allowed=True))
+def allocate_extremums(
+    values:NDArray, 
+    smoothing_value:Annotated[float, Ge(0.0)]=0.0, 
     result_type:Literal['indexes','values','both']='values',
-) -> Union[NDArray, Tuple[NDArray,NDArray]]:
+) -> NDArray|tuple[NDArray,NDArray]:
     """
     Осуществляет выделение экстремумов.
 
@@ -39,9 +62,9 @@ def allocate_extremums(
 
 def _allocate_extremums(
     values:NDArray, 
-    smoothing_value:float, 
+    smoothing_value:Annotated[float, Ge(0.0)], 
     result_type:Literal['indexes','values','both'],
-) -> Union[NDArray, Tuple[NDArray,NDArray]]:
+) -> NDArray|tuple[NDArray,NDArray]:
 
     # Массив значений и индексов
     values = values.copy()
@@ -68,8 +91,8 @@ def _allocate_extremums(
 
 
 def __perform_smoothing(
-    values:Union[NDArray,List[float]], 
-    smoothing_value:float, 
+    values:NDArray|list[float], 
+    smoothing_value:Annotated[float, Ge(0.0)], 
 ) -> NDArray:
 
     # Преобразование типов

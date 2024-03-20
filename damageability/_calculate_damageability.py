@@ -2,14 +2,15 @@ import numpy as np
 
 from numpy.typing import NDArray
 from typing import Literal
+from annotated_types import Annotated, Gt
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def calculate_damageability(
     zero_cycles:NDArray, 
-    fcd:float=4.0,
+    fcd:Annotated[float, Gt(0.0)]=4.0,
     result_type:Literal['array','value']='value',
 ) -> float:
     """
@@ -39,7 +40,7 @@ def calculate_damageability(
 
 def _calculate_damageability(
     zero_cycles:NDArray, 
-    fcd:float,
+    fcd:Annotated[float, Gt(0.0)],
     result_type:Literal['array','value'],
 ) -> float:
     

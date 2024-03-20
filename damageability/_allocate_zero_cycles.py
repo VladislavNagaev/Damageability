@@ -2,10 +2,10 @@ import numpy as np
 
 from numpy.typing import NDArray
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def allocate_zero_cycles(
     start_full_cycles:NDArray, 
     end_full_cycles:NDArray,

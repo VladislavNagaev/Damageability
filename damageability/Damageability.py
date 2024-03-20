@@ -7,12 +7,10 @@ from ._damageability_density_plot import _damageability_density_plot
 
 from numpy.typing import NDArray
 from matplotlib.figure import Figure
-from typing import Optional, Dict, Optional, Tuple, Any
+from typing import Optional, Optional, Any
+from annotated_types import Annotated, Gt
 
-from pydantic import validate_arguments
-
-
-# class DamageabilityData:
+from pydantic import validate_call
 
 
 
@@ -91,7 +89,7 @@ class Damageability:
 
 
     @property
-    def _init_data(self) -> Dict[str,Any]:
+    def _init_data(self) -> dict[str,Any]:
         return dict(
             _values = self._values, 
             _smoothing_value = self._smoothing_value,
@@ -119,13 +117,13 @@ class Damageability:
     
 
     @property
-    def cycle_values(self,) -> Tuple[NDArray,NDArray]:
+    def cycle_values(self,) -> tuple[NDArray,NDArray]:
         """Массивы значений начала и конца полных циклов."""
         return self._values[self._start_cycle_indexes], self._values[self._end_cycle_indexes]
 
 
     @property
-    def cycle_indexes(self,) -> Tuple[NDArray,NDArray]:
+    def cycle_indexes(self,) -> tuple[NDArray,NDArray]:
         """Массивы индексов значений начала и конца полных циклов."""
         return self._start_cycle_indexes, self._end_cycle_indexes
 
@@ -200,27 +198,26 @@ class Damageability:
         """Эквивалентное значение повреждаемости цикла земля-воздух-земля обратной реализации обработки на повреждаемость."""
         return float(self.damageability_aga_negative**(1/self._fcd))
 
+    @property
+    def damageability_dict(self,) -> dict[str,Any]:
+        """Результирующий словарь значений повреждаемости."""
+        return {
+            'damageability_positive_value': self.damageability_full_positive,
+            'damageability_negative_value': self.damageability_full_negative,
+            'damageability_aga_positive_value': self.damageability_aga_positive,
+            'damageability_aga_negative_value': self.damageability_aga_negative,
+            'equivalent_positive_value': self.equivalent_full_positive,
+            'equivalent_negative_value': self.equivalent_full_negative,
+            'equivalent_aga_positive_value': self.equivalent_aga_positive,
+            'equivalent_aga_negative_value': self.equivalent_aga_negative,
+        }
 
-    # @property
-    # def damageability_dict(self,) -> Dict[str,Any]:
-    #     """Результирующий словарь значений повреждаемости."""
-    #     return {
-    #         'damageability_positive_value': self.damageability_full_positive,
-    #         'damageability_negative_value': self.damageability_full_negative,
-    #         'damageability_aga_positive_value': self.damageability_aga_positive,
-    #         'damageability_aga_negative_value': self.damageability_aga_negative,
-    #         'equivalent_positive_value': self.equivalent_full_positive,
-    #         'equivalent_negative_value': self.equivalent_full_negative,
-    #         'equivalent_aga_positive_value': self.equivalent_aga_positive,
-    #         'equivalent_aga_negative_value': self.equivalent_aga_negative,
-    #     }
-
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def damageability_density(
         self,
         time_array:Optional[NDArray]=None,
-        sample_rate:int=50,
-    ) -> Tuple[NDArray, NDArray]:
+        sample_rate:Annotated[int, Gt(0)]=50,
+    ) -> tuple[NDArray, NDArray]:
         """
         Выполняет вычисление плотности повреждаемости.
 
@@ -271,16 +268,16 @@ class Damageability:
         return damageability_density_positive, damageability_density_negative
 
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def damageability_density_plot(
         self,
         time_array:Optional[NDArray]=None,
-        sample_rate:int=50,
-        dpi:float=100,
-        figsize_values:Tuple[float,float]=(16.0, 6.0),
-        font_size_figure_title:int=12,
-        font_size_figure_labels:int=10,
-        font_size_figure_ticks:int=10,
+        sample_rate:Annotated[int, Gt(0)]=50,
+        dpi:Annotated[float, Gt(0.0)]=100,
+        figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]]=(16.0, 6.0),
+        font_size_figure_title:Annotated[int, Gt(0)]=12,
+        font_size_figure_labels:Annotated[int, Gt(0)]=10,
+        font_size_figure_ticks:Annotated[int, Gt(0)]=10,
         damageability_density_positive_name:str='Плотность повреждаемости прямой реализации обработки на повреждаемость',
         damageability_density_negative_name:str='Плотность повреждаемости обратной реализации обработки на повреждаемость',
     ) -> Figure:

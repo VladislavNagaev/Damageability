@@ -7,16 +7,17 @@ from ._calculate_damageability import _calculate_damageability
 from .Damageability import Damageability
 
 from numpy.typing import NDArray
-from typing import Dict, Any
+from typing import Any
+from annotated_types import Annotated, Ge, Gt
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def damageability(
     values:NDArray, 
-    smoothing_value:float=0.0,
-    fcd:float=4.0,
+    smoothing_value:Annotated[float, Ge(0.0)]=0.0,
+    fcd:Annotated[float, Gt(0.0)]=4.0,
     **kwargs,
 ) -> Damageability:
     """
@@ -61,10 +62,10 @@ def damageability(
 
 def _damageability(
     values:NDArray, 
-    smoothing_value:float,
-    fcd:float,
+    smoothing_value:Annotated[float, Ge(0.0)],
+    fcd:Annotated[float, Gt(0.0)],
     sort:bool,
-) -> Dict[str, Any]:
+) -> dict[str,Any]:
 
     # Выделение экстремумов
     extremum_indexes = _allocate_extremums(

@@ -1,3 +1,6 @@
 
-python3.10 -m pip install --use-pep517 /media/sda1/Yandex.Disk/Working_folder/Programming/Projects/damageability 
+python3.10 -m pip install --upgrade build
+python3.10 -m build
+
+python3.10 -m pip install --use-pep517 damageability 
 

@@ -6,12 +6,13 @@ from ._allocate_full_cycles import _allocate_full_cycles
 
 from numpy.typing import NDArray
 from matplotlib.figure import Figure
-from typing import Dict, Union, List, Tuple, Optional, Literal, Generator
+from typing import Optional, Literal, Generator
+from annotated_types import Annotated, Gt
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def visualization_full_cycles(
     values:NDArray,
     return_original_plot:bool=True,
@@ -21,12 +22,12 @@ def visualization_full_cycles(
     set_legend:bool=False,
     set_extremum_points:Optional[Literal['indexes','values']]=None,
     sort:bool=False,
-    dpi:float=100,
-    figsize_values:Tuple[float,float]=(6.496, 2.436),
-    font_size_figure_title:int=12,
-    font_size_figure_labels:int=10,
-    font_size_figure_ticks:int=10,    
-) -> List[Figure]:
+    dpi:Annotated[float, Gt(0.0)]=100,
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]]=(6.496, 2.436),
+    font_size_figure_title:Annotated[int, Gt(0)]=12,
+    font_size_figure_labels:Annotated[int, Gt(0)]=10,
+    font_size_figure_ticks:Annotated[int, Gt(0)]=10,    
+) -> list[Figure]:
     """
     Визуализирует процесс выделения полных циклов 
 
@@ -101,13 +102,13 @@ def _visualization_full_cycles(
     set_legend:bool,
     set_extremum_points:Optional[Literal['indexes','values']],
     sort:bool,
-    dpi:float,
-    figsize_values:Tuple[float,float],
-    font_size_figure_title:int,
-    font_size_figure_labels:int,
-    font_size_figure_ticks:int,
+    dpi:Annotated[float, Gt(0.0)],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
+    font_size_figure_title:Annotated[int, Gt(0)],
+    font_size_figure_labels:Annotated[int, Gt(0)],
+    font_size_figure_ticks:Annotated[int, Gt(0)],
     **kwargs,
-) -> List[Figure]:
+) -> list[Figure]:
     
     # Получение индексов полных циклов
     (
@@ -251,21 +252,21 @@ def __cycle_main_plot(
     y_before:NDArray,
     x_after:NDArray,
     y_after:NDArray,
-    x_left:Tuple[int, int],
-    y_left:Tuple[float, float],
-    x_right:Tuple[int, int],
-    y_right:Tuple[float, float],
-    x_selected:Tuple[int, int],
-    y_selected:Tuple[float, float],
-    x_new:Tuple[int, int],
-    y_new:Tuple[float, float],
-    figsize_values:Tuple[float],
+    x_left:tuple[int, int],
+    y_left:tuple[float, float],
+    x_right:tuple[int, int],
+    y_right:tuple[float, float],
+    x_selected:tuple[int, int],
+    y_selected:tuple[float, float],
+    x_new:tuple[int, int],
+    y_new:tuple[float, float],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
     set_legend:bool=False,
     set_extremum_points:Optional[Literal['indexes','values']]=None,
-    dpi:float=100,
-    font_size_figure_title:int=12,
-    font_size_figure_labels:int=10,
-    font_size_figure_ticks:int=10,
+    dpi:Annotated[float, Gt(0.0)]=100,
+    font_size_figure_title:Annotated[int, Gt(0)]=12,
+    font_size_figure_labels:Annotated[int, Gt(0)]=10,
+    font_size_figure_ticks:Annotated[int, Gt(0)]=10,
     **kwargs,
 ) -> Figure:
     
@@ -351,13 +352,13 @@ def __cycle_remainder_plot(
     end_removed_indexes:NDArray,
     start_selected_indexes:NDArray,
     end_selected_indexes:NDArray,
-    figsize_values:Tuple[float],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
     set_legend:bool=False,
     set_extremum_points:Optional[Literal['indexes','values']]=None,
-    dpi:float=100,
-    font_size_figure_title:int=12,
-    font_size_figure_labels:int=10,
-    font_size_figure_ticks:int=10,
+    dpi:Annotated[float, Gt(0.0)]=100,
+    font_size_figure_title:Annotated[int, Gt(0)]=12,
+    font_size_figure_labels:Annotated[int, Gt(0)]=10,
+    font_size_figure_ticks:Annotated[int, Gt(0)]=10,
     **kwargs,
 ) -> Figure:
     
@@ -459,11 +460,11 @@ def __original_plot(
     y_values:NDArray,
     set_extremum_points:Optional[Literal['indexes','values']],
     set_legend:bool,
-    dpi:float,
-    figsize_values:Tuple[float],
-    font_size_figure_title:int,
-    font_size_figure_labels:int,
-    font_size_figure_ticks:int,
+    dpi:Annotated[float, Gt(0.0)],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
+    font_size_figure_title:Annotated[int, Gt(0)],
+    font_size_figure_labels:Annotated[int, Gt(0)],
+    font_size_figure_ticks:Annotated[int, Gt(0)],
     **kwargs,
 ) -> Figure:
     
@@ -518,11 +519,11 @@ def __result_plot(
     end_full_cycle:NDArray,
     set_extremum_points:Optional[Literal['indexes','values']],
     set_legend:bool,
-    dpi:float,
-    figsize_values:Tuple[float,float],
-    font_size_figure_title:int,
-    font_size_figure_labels:int,
-    font_size_figure_ticks:int,
+    dpi:Annotated[float, Gt(0.0)],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
+    font_size_figure_title:Annotated[int, Gt(0)],
+    font_size_figure_labels:Annotated[int, Gt(0)],
+    font_size_figure_ticks:Annotated[int, Gt(0)],
     **kwargs,
 ) -> Figure:
     
@@ -600,7 +601,7 @@ def __full_cycle_main_iterations(
     values:NDArray,
     start_full_cycle:NDArray,
     end_full_cycle:NDArray,
-) -> Generator[Dict[str,Union[Tuple,NDArray]], None, None]:
+) -> Generator[dict[str,tuple|NDArray], None, None]:
     
     # Индексы крайних точек массива
     idx_first_point, idx_last_point = np.min(start_full_cycle), np.max(end_full_cycle)

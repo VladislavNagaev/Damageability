@@ -2,10 +2,10 @@ import numpy as np
 
 from numpy.typing import NDArray
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def damageability_density(
     damageability_array:NDArray,
     time_array:NDArray,
@@ -24,9 +24,6 @@ def damageability_density(
             Массив индексов начала выделенных полных циклов.
         end_cycle_indexes : ndarray
             Массив индексов оконачния выделенных полных циклов.
-        
-    Returns:
-
     """
 
     return _damageability_density(

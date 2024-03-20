@@ -1,24 +1,26 @@
 import numpy as np
 
+from numpy import int64
 from numpy.typing import NDArray
-from typing import Tuple, Literal, Optional, Union
+from typing import Literal, Optional, overload
+from annotated_types import Annotated, Ge, Gt
 
 from ._allocate_extremums import _allocate_extremums
 from ._allocate_zero_cycles import _allocate_zero_cycles
 from ._calculate_damageability import _calculate_damageability
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def allocate_full_cycles(
     values:NDArray,
     result_type:Literal['indexes','values']='indexes',
     sort:bool=True,
-    fcd:Optional[float]=None,
+    fcd:Optional[Annotated[float, Gt(0.0)]]=None,
     assume_extremums:bool=False,
-    smoothing_value:float=0.0,
-) -> Tuple[NDArray,NDArray]:
+    smoothing_value:Annotated[float, Ge(0.0)]=0.0,
+) -> tuple[NDArray,NDArray]:
     """
     Осуществляет выделение полных циклов из массива данных.
 
@@ -96,13 +98,31 @@ def allocate_full_cycles(
         )
 
 
+@overload
+def _allocate_full_cycles(
+    values:NDArray,
+    result_type:Literal['indexes','values']=...,
+    sort:bool=...,
+    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
+    raw_data:Literal[False]=...,
+) -> tuple[NDArray,NDArray]: ...
+
+@overload
+def _allocate_full_cycles(
+    values:NDArray,
+    result_type:Literal['indexes','values']=...,
+    sort:bool=...,
+    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
+    raw_data:Literal[True]=...,
+) -> tuple[tuple[NDArray,NDArray],tuple[NDArray,NDArray],tuple[NDArray,NDArray]]: ...
+
 def _allocate_full_cycles(
     values:NDArray,
     result_type:Literal['indexes','values'],
     sort:bool,
-    fcd:Optional[float],
+    fcd:Optional[Annotated[float, Gt(0.0)]]=None,
     raw_data:bool=False,
-) -> Union[Tuple[NDArray,NDArray], Tuple[Tuple[NDArray,NDArray],Tuple[NDArray,NDArray],Tuple[NDArray,NDArray]]]:
+) -> tuple[NDArray,NDArray]|tuple[tuple[NDArray,NDArray],tuple[NDArray,NDArray],tuple[NDArray,NDArray]]:
     
     # Массив индексов обрабатываемых значений
     indexes = np.arange(stop=values.size,)
@@ -156,13 +176,13 @@ def _allocate_full_cycles(
     elif result_type == 'values':
         return values[start_cycle_indexes], values[end_cycle_indexes]
     else:
-        raise ValueError('unknown result_type')
+        raise ValueError(f'unknown result_type "{result_type}"')
         
 
 def __allocate_main_cycles(
     values:NDArray, 
-    indexes:NDArray,
-) -> Tuple[NDArray,NDArray,NDArray]:
+    indexes:NDArray[int64],
+) -> tuple[NDArray[int64],NDArray[int64],NDArray[int64]]:
     """
     Выполняет выделение полных циклов методом полных циклов. 
     Возвращает массивы индексов начала и окончания выделенных циклов и 
@@ -289,8 +309,8 @@ def __remove_intersection_cycles(
 def __allocate_remainder_cycles(
     values:NDArray, 
     indexes:NDArray,
-    fcd:Optional[float],
-) -> Tuple[NDArray,NDArray,NDArray]:
+    fcd:Optional[Annotated[float, Gt(0.0)]]=None,
+) -> tuple[NDArray,NDArray,NDArray]:
     """
     Выполняет выделение полных циклов из массива остатков после выделения
     методом полных циклов.
@@ -313,8 +333,9 @@ def __allocate_remainder_cycles(
             Массив исходных значений.
         indexes : ndarray
             Массив индексов значений, подлежащих обработке.
-        fcd : float
+        fcd : float, optional
             Показатель степени кривой усталости материала (fatigue curve degree).
+            Default to None
     
     Returns:
         start_full_cycle : ndarray
@@ -372,7 +393,7 @@ def __allocate_remainder_cycles(
             end_full_cycles=np.negative(values[end_cycle_indexes]),
         )
 
-        if fcd is not None:
+        if fcd:
 
             # Накопленная повреждаемость оцениваемой реализации
             # прямой реализации обработки на повреждаемость

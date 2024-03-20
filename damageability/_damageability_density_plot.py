@@ -4,21 +4,21 @@ from functools import reduce
 
 from numpy.typing import NDArray
 from matplotlib.figure import Figure
-from typing import Tuple
+from annotated_types import Annotated, Gt
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def damageability_density_plot(
     damageability_density_positive:NDArray,
     damageability_density_negative:NDArray,
     time_array:NDArray,
-    dpi:float=100,
-    figsize_values:Tuple[float,float]=(6.496, 2.436),
-    font_size_figure_title:int=12,
-    font_size_figure_labels:int=10,
-    font_size_figure_ticks:int=10,
+    dpi:Annotated[float, Gt(0.0)]=100,
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]]=(6.496, 2.436),
+    font_size_figure_title:Annotated[int, Gt(0)]=12,
+    font_size_figure_labels:Annotated[int, Gt(0)]=10,
+    font_size_figure_ticks:Annotated[int, Gt(0)]=10,
     damageability_density_positive_name:str='Плотность повреждаемости прямой реализации обработки на повреждаемость',
     damageability_density_negative_name:str='Плотность повреждаемости обратной реализации обработки на повреждаемость',
 ) -> Figure:
@@ -78,11 +78,11 @@ def _damageability_density_plot(
     damageability_density_positive:NDArray,
     damageability_density_negative:NDArray,
     time_array:NDArray,
-    dpi:float,
-    figsize_values:Tuple[float,float],
-    font_size_figure_title:int,
-    font_size_figure_labels:int,
-    font_size_figure_ticks:int,
+    dpi:Annotated[float, Gt(0.0)],
+    figsize_values:tuple[Annotated[float, Gt(0.0)],Annotated[float, Gt(0.0)]],
+    font_size_figure_title:Annotated[int, Gt(0)],
+    font_size_figure_labels:Annotated[int, Gt(0)],
+    font_size_figure_ticks:Annotated[int, Gt(0)],
     damageability_density_positive_name:str,
     damageability_density_negative_name:str,
 ) -> Figure:
