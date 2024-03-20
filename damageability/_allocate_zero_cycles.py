@@ -51,7 +51,9 @@ def _allocate_zero_cycles(
     indexes_1 = mean_full_cycles >= 0
     indexes_2 = np.logical_and( ~(mean_full_cycles >= 0), (max_full_cycles > 0) )
 
-    values_1 = np.sqrt(2 * amplitude_full_cycles * max_full_cycles)
+    # Домножение на indexes_1 позволяет избавиться от ошибки извлечения корня из отрицательного числа
+    # RuntimeWarning: invalid value encountered in sqrt
+    values_1 = np.sqrt(2 * amplitude_full_cycles * max_full_cycles * indexes_1)
     values_2 = np.sqrt(2) * (amplitude_full_cycles + 0.2 * mean_full_cycles)
 
     zero_cycles[indexes_1] = values_1[indexes_1]
