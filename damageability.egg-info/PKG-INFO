@@ -6,5 +6,6 @@ Author: Vladislav Nagaev
 Author-email: vladislav.nagaew@gmail.com
 Requires-Python: >=3.8
 Requires-Dist: numpy>=1.24.0
+Requires-Dist: numba>=0.59.1
 Requires-Dist: matplotlib>=3.8.0
 Requires-Dist: pydantic>=2.5.0

@@ -32,6 +32,7 @@ from the action of variable force factors""",
     python_requires='>=3.8',
     install_requires=[
         'numpy>=1.24.0',
+        'numba>=0.59.1',
         'matplotlib>=3.8.0',
         'pydantic>=2.5.0',
     ], 
