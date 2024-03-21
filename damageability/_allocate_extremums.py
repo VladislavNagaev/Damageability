@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import int64
-from numba import jit
+
+import numba as nb
 
 from numpy.typing import NDArray
 from typing import Literal, overload
@@ -80,7 +81,11 @@ def _allocate_extremums(
         raise ValueError()
 
 
-@jit(nopython=True)
+arg_types = (nb.float64[::1], nb.float64)
+ret_type = nb.int64[::1]
+sig = ret_type(*arg_types)
+
+@nb.jit(sig, nopython=True)
 def __allocate_extremums(
     values:NDArray, 
     smoothing_value:Annotated[float, Ge(0.0)], 

@@ -1,4 +1,4 @@
-README.rst
+README.md
 setup.py
 damageability/Damageability.py
 damageability/__init__.py
