@@ -254,15 +254,15 @@ class Damageability:
         damageability_density_positive = _damageability_density(
             damageability_array=self._damageability_array_positive,
             time_array=time_array,
-            start_cycle_indexes=self._start_cycle_indexes,
-            end_cycle_indexes=self._end_cycle_indexes,
+            start_indexes=self._start_cycle_indexes,
+            end_indexes=self._end_cycle_indexes,
         )
         # обратной реализации обработки на повреждаемость
         damageability_density_negative = _damageability_density(
             damageability_array=self._damageability_array_negative,
             time_array=time_array,
-            start_cycle_indexes=self._start_cycle_indexes,
-            end_cycle_indexes=self._end_cycle_indexes,
+            start_indexes=self._start_cycle_indexes,
+            end_indexes=self._end_cycle_indexes,
         )
 
         return damageability_density_positive, damageability_density_negative
@@ -336,15 +336,15 @@ class Damageability:
         damageability_density_positive = _damageability_density(
             damageability_array=self._damageability_array_positive,
             time_array=time_array,
-            start_cycle_indexes=self._start_cycle_indexes,
-            end_cycle_indexes=self._end_cycle_indexes,
+            start_indexes=self._start_cycle_indexes,
+            end_indexes=self._end_cycle_indexes,
         )
         # обратной реализации обработки на повреждаемость
         damageability_density_negative = _damageability_density(
             damageability_array=self._damageability_array_negative,
             time_array=time_array,
-            start_cycle_indexes=self._start_cycle_indexes,
-            end_cycle_indexes=self._end_cycle_indexes,
+            start_indexes=self._start_cycle_indexes,
+            end_indexes=self._end_cycle_indexes,
         )
 
         return _damageability_density_plot(
