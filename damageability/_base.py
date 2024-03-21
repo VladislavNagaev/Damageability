@@ -103,13 +103,11 @@ def _damageability(
     damageability_array_positive = _calculate_damageability(
         zero_cycles=zero_cycles_positive,
         fcd=fcd,
-        result_type='array',
     )
     # обратной реализации обработки на повреждаемость
     damageability_array_negative = _calculate_damageability(
         zero_cycles=zero_cycles_negative,
         fcd=fcd,
-        result_type='array',
     )
 
     return dict(

@@ -1,7 +1,8 @@
 import numpy as np
-
-from numpy import int64
 from numpy.typing import NDArray
+
+import numba as nb
+
 from typing import Literal, Optional, overload
 from annotated_types import Annotated, Ge, Gt
 
@@ -181,8 +182,8 @@ def _allocate_full_cycles(
 
 def __allocate_main_cycles(
     values:NDArray, 
-    indexes:NDArray[int64],
-) -> tuple[NDArray[int64],NDArray[int64],NDArray[int64]]:
+    indexes:NDArray[np.int64],
+) -> tuple[NDArray[np.int64],NDArray[np.int64],NDArray[np.int64]]:
     """
     Выполняет выделение полных циклов методом полных циклов. 
     Возвращает массивы индексов начала и окончания выделенных циклов и 
@@ -400,14 +401,12 @@ def __allocate_remainder_cycles(
             damageability_value_pos = _calculate_damageability(
                 zero_cycles=zero_cycles_pos,
                 fcd=fcd,
-                result_type='value',
-            )
+            ).sum()
             # обратной реализации обработки на повреждаемость
             damageability_value_neg = _calculate_damageability(
                 zero_cycles=zero_cycles_neg,
                 fcd=fcd,
-                result_type='value',
-            )
+            ).sum()
 
         else:
             
