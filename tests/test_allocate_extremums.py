@@ -1,6 +1,6 @@
 import numpy as np
 
-from damageability._allocate_extremums import _allocate_extremums
+from damageability._allocate_extremums import allocate_extremums
 
 
 values = np.array([ 
@@ -95,7 +95,7 @@ extremum_values_010 = np.array([
 
 
 def test_allocate_extremums_000():
-    extremum_values_000_ = _allocate_extremums(
+    extremum_values_000_ = allocate_extremums(
         values=values,
         smoothing_value=0.00,
         result_type='values',
@@ -104,7 +104,7 @@ def test_allocate_extremums_000():
 
 
 def test_allocate_extremums_001():
-    extremum_values_001_ = _allocate_extremums(
+    extremum_values_001_ = allocate_extremums(
         values=values,
         smoothing_value=0.01,
         result_type='values',
@@ -113,7 +113,7 @@ def test_allocate_extremums_001():
 
 
 def test_allocate_extremums_010():
-    extremum_values_010_ = _allocate_extremums(
+    extremum_values_010_ = allocate_extremums(
         values=values,
         smoothing_value=0.10,
         result_type='values',

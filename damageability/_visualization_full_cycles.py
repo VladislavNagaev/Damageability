@@ -115,13 +115,7 @@ def _visualization_full_cycles(
         (start_full_cycle_main, end_full_cycle_main), 
         (start_full_cycle_remainder, end_full_cycle_remainder,), 
         (start_full_cycle_last, end_full_cycle_last),
-    ) = _allocate_full_cycles(
-        values=values, 
-        result_type='indexes',
-        sort=False,
-        fcd=None,
-        raw_data=True,
-    )
+    ) = _allocate_full_cycles(values, raw_data=True,)
 
     # Инициализация списка фигур
     figure_list = list()

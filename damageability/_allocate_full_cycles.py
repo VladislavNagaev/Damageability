@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 import numba as nb
 
-from typing import Literal, Optional, overload
+from typing import Literal, Optional, TypeAlias, overload
 from annotated_types import Annotated, Ge, Gt
 
 from ._allocate_extremums import _allocate_extremums
@@ -45,8 +45,6 @@ def allocate_full_cycles(
             Если не задано - оценка будет производиться по значениям амплитуд, что 
             потенциально может дать незначительное отклонение в точности выделения 
             полных циклов. 
-            На практике данный показатель не оказывает сколько-либо значимых изменений, но
-            усложняет процесс расчета.
             Default to None
         assume_extremums : bool, optional
             If True, the input array is assumed to be unique.
@@ -67,123 +65,93 @@ def allocate_full_cycles(
     if assume_extremums == False:
 
         # Выделение экстремумов
-        extremum_indexes = _allocate_extremums(
-            values=values,
-            smoothing_value=smoothing_value,
-            result_type='indexes',
-        )
-    
-        start_cycle_indexes_, end_cycle_indexes_ = _allocate_full_cycles(
-            values=values[extremum_indexes],
-            result_type='indexes',
-            sort=sort,
-            fcd=fcd,
-        )
-
+        extremum_indexes = _allocate_extremums(values, smoothing_value)
+        # Выделение полных циклов
+        start_cycle_indexes_, end_cycle_indexes_ = _allocate_full_cycles(values[extremum_indexes], sort=sort, fcd=fcd,)
         # Индексы полных циклов в исходном массиве данных
         start_cycle_indexes = extremum_indexes[start_cycle_indexes_]
         end_cycle_indexes = extremum_indexes[end_cycle_indexes_]
 
-        if result_type == 'indexes':
-            return start_cycle_indexes, end_cycle_indexes
-        elif result_type == 'values':
-            return values[start_cycle_indexes], values[end_cycle_indexes]
-
     else:
 
-        return _allocate_full_cycles(
-            values=values,
-            result_type=result_type,
-            sort=sort,
-            fcd=fcd,
-        )
-
-
-@overload
-def _allocate_full_cycles(
-    values:NDArray,
-    result_type:Literal['indexes','values']=...,
-    sort:bool=...,
-    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
-    raw_data:Literal[False]=...,
-) -> tuple[NDArray,NDArray]: ...
-
-@overload
-def _allocate_full_cycles(
-    values:NDArray,
-    result_type:Literal['indexes','values']=...,
-    sort:bool=...,
-    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
-    raw_data:Literal[True]=...,
-) -> tuple[tuple[NDArray,NDArray],tuple[NDArray,NDArray],tuple[NDArray,NDArray]]: ...
-
-def _allocate_full_cycles(
-    values:NDArray,
-    result_type:Literal['indexes','values'],
-    sort:bool,
-    fcd:Optional[Annotated[float, Gt(0.0)]]=None,
-    raw_data:bool=False,
-) -> tuple[NDArray,NDArray]|tuple[tuple[NDArray,NDArray],tuple[NDArray,NDArray],tuple[NDArray,NDArray]]:
-    
-    # Массив индексов обрабатываемых значений
-    indexes = np.arange(stop=values.size,)
-
-    # Выделение полных циклов методом полных циклов
-    start_indexes_main, end_indexes_main, indexes = __allocate_main_cycles(
-        values=values, 
-        indexes=indexes,
-    )
-    # Выделение полных циклов из массива остатков
-    start_indexes_remainder, end_indexes_remainder, indexes = __allocate_remainder_cycles(
-        values=values, 
-        indexes=indexes,
-        fcd=fcd,
-    )
-    # Выделение оставшегося нераспределенного цикла
-    if indexes.size == 2:
-        start_indexes_last, end_indexes_last = indexes[[0]], indexes[[1]]
-    else:
-        start_indexes_last, end_indexes_last = np.array([], dtype=np.int64, ), np.array([], dtype=np.int64, )
-
-    # Вернуть "сырые" данные
-    if raw_data:
-        return (
-            (start_indexes_main, end_indexes_main), 
-            (start_indexes_remainder, end_indexes_remainder,), 
-            (start_indexes_last, end_indexes_last),
-        )
-
-    # Объединение массивов индексов выделенных циклов
-    start_cycle_indexes = np.concatenate(( start_indexes_main, start_indexes_remainder, start_indexes_last, ))
-    end_cycle_indexes = np.concatenate(( end_indexes_main, end_indexes_remainder, end_indexes_last ))
-
-    if sort:
-
-        # Амплитуды выделенных циклов
-        amplitudes = np.divide(np.abs(np.subtract(
-            values[end_cycle_indexes], 
-            values[start_cycle_indexes],
-        )), 2)
-        
-        # Индексы сортировки циклов по возрастанию амплитуды
-        sort_indexes = np.argsort(amplitudes)
-
-        # Сортировка циклов по возрастанию амплитуды
-        start_cycle_indexes = start_cycle_indexes[sort_indexes]
-        end_cycle_indexes = end_cycle_indexes[sort_indexes]
+        # Выделение полных циклов
+        start_cycle_indexes, end_cycle_indexes =  _allocate_full_cycles(values, sort=sort, fcd=fcd,)
 
     if result_type == 'indexes':
         return start_cycle_indexes, end_cycle_indexes
     elif result_type == 'values':
         return values[start_cycle_indexes], values[end_cycle_indexes]
-    else:
-        raise ValueError(f'unknown result_type "{result_type}"')
-        
 
-def __allocate_main_cycles(
-    values:NDArray, 
-    indexes:NDArray[np.int64],
-) -> tuple[NDArray[np.int64],NDArray[np.int64],NDArray[np.int64]]:
+
+full_cycles: TypeAlias = tuple[NDArray[np.int64],NDArray[np.int64]]
+
+@overload
+def _allocate_full_cycles(
+    values:NDArray[np.float64], 
+    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
+    sort:bool=...,
+    raw_data:Literal[False]=...,
+) -> full_cycles: ...
+
+@overload
+def _allocate_full_cycles(
+    values:NDArray[np.float64], 
+    fcd:Optional[Annotated[float, Gt(0.0)]]=...,
+    sort:bool=...,
+    raw_data:Literal[True]=...,
+) -> tuple[full_cycles,full_cycles,full_cycles]: ...
+
+def _allocate_full_cycles(
+    values:NDArray[np.float64], 
+    fcd:Optional[Annotated[float, Gt(0.0)]]=None,
+    sort:bool=True,
+    raw_data:bool=False,
+) -> full_cycles|tuple[full_cycles,full_cycles,full_cycles]:
+
+    # Массивы индексов точек начала и окончания полных циклов и массив индексов точек остатков
+    # основной реализации методом полных циклов
+    main_start_indexes, main_end_indexes, remainder_indexes = _main_full_cycles(values)
+    # реализации из остатков
+    remainder_start_indexes, remainder_end_indexes, remainder_indexes_ = \
+    _remainder_full_cycles(values[remainder_indexes],fcd)
+    
+    # Обратная индексация реализации из остатков
+    remainder_start_indexes = remainder_indexes[remainder_start_indexes]
+    remainder_end_indexes = remainder_indexes[remainder_end_indexes]
+    remainder_indexes = remainder_indexes[remainder_indexes_]
+    
+    # Выделение оставшегося нераспределенного цикла
+    if remainder_indexes.size == 2:
+        last_start_indexes, last_end_indexes = remainder_indexes[[0]], remainder_indexes[[1]]
+    else:
+        last_start_indexes, last_end_indexes = np.array([], np.int64), np.array([], np.int64)
+    
+    # Объединение массивов индексов выделенных циклов
+    start_indexes = np.concatenate((main_start_indexes, remainder_start_indexes, last_start_indexes))
+    end_indexes = np.concatenate((main_end_indexes, remainder_end_indexes, last_end_indexes))
+    
+    # Сортировка
+    if sort:
+        # Амплитуды выделенных циклов
+        amplitudes = np.divide(np.abs(np.subtract(values[end_indexes], values[start_indexes])), 2)
+        # Индексы сортировки циклов по возрастанию амплитуды
+        sort_indexes = np.argsort(amplitudes)
+        # Сортировка циклов по возрастанию амплитуды
+        start_indexes = start_indexes[sort_indexes]
+        end_indexes = end_indexes[sort_indexes]
+
+    # Вернуть "сырые" данные
+    if raw_data:
+        return (
+            (main_start_indexes, main_end_indexes), 
+            (remainder_start_indexes, remainder_end_indexes,), 
+            (last_start_indexes, last_start_indexes),
+        )
+    else:
+        return start_indexes, end_indexes
+
+
+def _main_full_cycles(values:NDArray[np.float64],) -> tuple[NDArray[np.int64],NDArray[np.int64],NDArray[np.int64]]:
     """
     Выполняет выделение полных циклов методом полных циклов. 
     Возвращает массивы индексов начала и окончания выделенных циклов и 
@@ -209,109 +177,92 @@ def __allocate_main_cycles(
     Args:
         values : ndarray
             Массив исходных значений. Значения должны быть массивом экстремумов.
-        indexes : ndarray
-            Массив индексов значений, подлежащих обработке.
     
     Returns:
-        start_full_cycle : ndarray
-            Массив значений начала полных циклов.
-        end_full_cycle : ndarray
-            Массив значений конца полных циклов.
-        indexes : ndarray
-            Массив индексов значений, подлежащих обработке.
-        
+        start_indexes : ndarray
+            Массив индексов точек начала полных циклов.
+        end_indexes : ndarray
+            Массив индексов точек окончания полных циклов.
+        remainder_indexes : ndarray
+            Массив индексов точек остатков.
     """
-
-    # Пустые массивы для сохранения результатов
-    start_cycle_indexes = np.array([], dtype=np.int64, )
-    end_cycle_indexes = np.array([], dtype=np.int64, )
-
-    while True:
-
-        # Участки, на которых выполняется условие
-        cycle_positions = np.logical_and(
-            np.less_equal(
-                np.abs(np.subtract(values[indexes][1:-2],values[indexes][2:-1])),
-                np.abs(np.subtract(values[indexes][ :-3],values[indexes][1:-2])),
-            ),
-            np.less_equal(
-                np.abs(np.subtract(values[indexes][1:-2],values[indexes][2:-1])),
-                np.abs(np.subtract(values[indexes][2:-1],values[indexes][3:  ])),
-            ),
-        )
-
-        # Прерывание цикла в случае отсуствия циклов в массиве
-        if not np.any(cycle_positions):
-            break
-
-        # Коррекитровка участков, на которых выполняется условие
-        cycle_positions = __remove_intersection_cycles(
-            cycle_positions=cycle_positions, 
-            values=values[indexes],
-        )
-
-        # Позиции выделенных циклов
-        start_cycle_positions = np.add(np.where(cycle_positions)[0], 1)
-        end_cycle_positions = np.add(np.where(cycle_positions)[0], 2)
-
-        # Индексы выделенных циклов
-        start_cycle_indexes = np.concatenate(( start_cycle_indexes, indexes[start_cycle_positions], ))
-        end_cycle_indexes = np.concatenate(( end_cycle_indexes, indexes[end_cycle_positions], ))
-
-        # Позиции элементов, подлежащих удалению из рабочих массивов
-        remove_positions = np.concatenate((start_cycle_positions, end_cycle_positions,))
-
-        # Обновление рабочих массивов
-        indexes = np.delete(indexes, remove_positions)
-
-    return start_cycle_indexes, end_cycle_indexes, indexes
-
-
-def __remove_intersection_cycles(
-    cycle_positions:NDArray, 
-    values:NDArray, 
-) -> NDArray:
     
-    # Группы выделяемых циклов
-    cycle_groups = np.cumsum(np.append(True, np.diff(a=cycle_positions,) ))
-    # Количества циклов в группах
-    unique_groups, unique_counts = np.unique(ar=cycle_groups, return_counts=True)
-    # Статус выделения циклов в группах
-    unique_cycle = cycle_positions[np.searchsorted(a=cycle_groups, v=unique_groups, side='left', )]
-    # Корректировка крайних значений статуса выделения циклов в группах
-    unique_cycle[[0,-1]] = True
-    # Группы разделители
-    groups_split = np.logical_and(np.greater_equal(unique_counts, 2), ~unique_cycle)
-    # Циклы разделители
-    split_cycle = np.repeat(a=groups_split, repeats=unique_counts, )
-    # Список индексов групп циклов
-    indexes_split = np.split(
-        ary=np.arange(stop=cycle_positions.size), 
-        indices_or_sections=np.add(np.where(np.diff(a=split_cycle,))[0], 1),
-    )
-    # Список амплитуд групп циклов
-    amplitudes_split = np.split(
-        ary=np.multiply(np.abs(np.diff(values))[1:-1], cycle_positions), 
-        indices_or_sections=np.add(np.where(np.diff(a=split_cycle,))[0], 1),
-    )
-    # Индексы участков, на которых выполняется условие (корректировка)
-    cycle_positions_indexes = [
-        index[np.nonzero(amplitude)[0][np.argmin(amplitude[np.nonzero(amplitude)[0]])]]
-        for index, amplitude in zip(indexes_split[::2], amplitudes_split[::2])
-    ]
-    # Инициализация отрицательного массива участков
-    cycle_positions = np.full(fill_value=False, shape=cycle_positions.shape, dtype=bool, )
-    # аполнение участков, на которых выполняется условие (корректировка)
-    cycle_positions[cycle_positions_indexes] = True
+    # Массивы индексов точек начала и окончания полных циклов
+    start_indexes = np.array([], np.int64,)
+    end_indexes = np.array([], np.int64,)
+    # Массив индексов точек остатков
+    remainder_indexes = np.arange(values.size, dtype=np.int64,)
+
+    # Флаг обхода массива
+    cycle = True
     
-    return cycle_positions
+    while cycle:
+
+        # Выполнить единичный обход массива
+        traversed_start_indexes, traversed_end_indexes, traversed_remainder_indexes = \
+        __traversal_array( values[remainder_indexes] )    
+
+        # Полные циклы были выделены в последнем обходе массива
+        cycle = not remainder_indexes.size == traversed_remainder_indexes.size
+
+        # Сохранение выделенных индексов точек начала и окончания полных циклов единичного прохода
+        start_indexes = np.concatenate((start_indexes, remainder_indexes[traversed_start_indexes]), dtype=np.int64,)
+        end_indexes = np.concatenate((end_indexes, remainder_indexes[traversed_end_indexes]), dtype=np.int64,)
+        # Обновление индексов точек остатков
+        remainder_indexes = remainder_indexes[traversed_remainder_indexes]
+        
+    return start_indexes, end_indexes, remainder_indexes
 
 
-def __allocate_remainder_cycles(
-    values:NDArray, 
-    indexes:NDArray,
+arg_type = nb.float64[::1]
+ret_type = nb.types.Tuple((nb.int64[::1], nb.int64[::1], nb.int64[::1]))
+sig = ret_type(arg_type)
+
+@nb.jit(sig, nopython=True)
+def __traversal_array(values:NDArray[np.float64],) -> tuple[NDArray[np.int64],NDArray[np.int64],NDArray[np.int64]]:
+    """Выполнить единичный обход массива, выделяя полные циклы."""
+    
+    # Массивы индексов точек начала и окончания полных циклов
+    start_indexes = list()
+    end_indexes = list()
+    # Массив индексов точек остатков
+    remainder_indexes = list()
+
+    # Размер массива
+    n = values.size
+    
+    # Индексы нулевой и первой точек потенциального цикла
+    # (индексы второй и третьей точки образуются суммированием первой точки с единицей и двойкой сооответственно)
+    i0, i1 = 0, 1
+
+    while i1<=n-3:
+
+        # Условие при котором 1 и 2 точки образуют полный цикл
+        if (
+            abs(values[i1]-values[i1+1])<=abs(values[i0  ]-values[i1  ])
+            and
+            abs(values[i1]-values[i1+1])<=abs(values[i1+1]-values[i1+2])
+        ):
+            start_indexes.append(i1)
+            end_indexes.append(i1+1)
+            i1+=2
+        else:
+            remainder_indexes.append(i0)
+            i0, i1 = i1, i1+1
+
+    # Обработка остатка
+    remainder_indexes.append(i0)
+    if i1==n-2:
+        remainder_indexes.append(i1  )
+        remainder_indexes.append(i1+1)
+
+    return np.array(start_indexes, np.int64), np.array(end_indexes, np.int64), np.array(remainder_indexes, np.int64)
+
+
+def _remainder_full_cycles(
+    values:NDArray[np.float64], 
     fcd:Optional[Annotated[float, Gt(0.0)]]=None,
-) -> tuple[NDArray,NDArray,NDArray]:
+) -> tuple[NDArray[np.int64],NDArray[np.int64],NDArray[np.int64]]:
     """
     Выполняет выделение полных циклов из массива остатков после выделения
     методом полных циклов.
@@ -332,108 +283,96 @@ def __allocate_remainder_cycles(
     Args:
         values : ndarray
             Массив исходных значений.
-        indexes : ndarray
-            Массив индексов значений, подлежащих обработке.
         fcd : float, optional
             Показатель степени кривой усталости материала (fatigue curve degree).
             Default to None
     
     Returns:
-        start_full_cycle : ndarray
-            Массив значений начала полных циклов.
-        end_full_cycle : ndarray
-            Массив значений конца полных циклов.
-        indexes : ndarray
-            Массив индексов значений, подлежащих обработке.
+        start_indexes : ndarray
+            Массив индексов точек начала полных циклов.
+        end_indexes : ndarray
+            Массив индексов точек окончания полных циклов.
+        remainder_indexes : ndarray
+            Массив индексов точек остатков.
     
     """
     
     # Индексы экстремумов
-    max_indexes = np.where(values[indexes] == np.max(values[indexes]))[0]
-    min_indexes = np.where(values[indexes] == np.min(values[indexes]))[0]
-
-    if (max_indexes.size == 1) and (min_indexes.size > 1):
-        max_indexes = np.repeat(a=max_indexes, repeats=min_indexes.size,)
-    elif (max_indexes.size > 1) and (min_indexes.size == 1):
-        min_indexes = np.repeat(a=min_indexes, repeats=max_indexes.size,)
-    elif (max_indexes.size == 1) and (min_indexes.size == 1):
-        pass
-    else:
-        raise ValueError()
-
-    # Инициализация списков реализаций
-    start_cycle_indexes_list = list()
-    end_cycle_indexes_list = list()
-    damageability_list = list()
-
+    max_indexes = np.where(np.equal(values, values.max()))[0]
+    min_indexes = np.where(np.equal(values, values.min()))[0]
+    
+    if min_indexes.size>1:
+        max_indexes = np.repeat(max_indexes, min_indexes.size)
+    elif max_indexes.size>1:
+        min_indexes = np.repeat(min_indexes, max_indexes.size)
+    
+    # Варианты реализации массивов индексов точек начала и окончания полных циклов
+    start_indexes_implementations = list()
+    end_indexes_implementations = list()
+    # Варианты реализации значений накопленной повреждаемости
+    damageability_implementations = list()
+    
+    # Массив индексов точек остатков
+    remainder_indexes = np.arange(values.size, dtype=np.int64,)
+    
     # Проход по вариантам комбинации экстремумов
     for max_index, min_index in zip(max_indexes, min_indexes):
-
+    
         # Индексы начала и окончания цикла ЗВЗ
-        start_cycle_aga_index = min(max_index, min_index)
-        end_cycle_aga_index = max(max_index, min_index)
-
+        start_aga_index = min(max_index, min_index)
+        end_aga_index = max(max_index, min_index)
+    
         # Индексы начала и окончания циклов
-        start_cycle_indexes = indexes[start_cycle_aga_index%2::2]
-        end_cycle_indexes = indexes[start_cycle_aga_index%2+1::2]
+        start_indexes = remainder_indexes[start_aga_index%2::2]
+        end_indexes = remainder_indexes[start_aga_index%2+1::2]
+        
         # Количество циклов
-        size = min(start_cycle_indexes.size, end_cycle_indexes.size)
+        size = min(start_indexes.size, end_indexes.size)
+        
         # Корректировка количества элементов
-        start_cycle_indexes = start_cycle_indexes[:size]
-        end_cycle_indexes = end_cycle_indexes[:size]
-
+        start_indexes = start_indexes[:size]
+        end_indexes = end_indexes[:size]
+    
         # Массив отнулевых циклов 
         # прямой реализации обработки на повреждаемость
-        zero_cycles_pos = _allocate_zero_cycles(
-            start_full_cycles=values[start_cycle_indexes], 
-            end_full_cycles=values[end_cycle_indexes],
-        )
+        zero_cycles_pos = _allocate_zero_cycles(values[start_indexes], values[end_indexes])
         # обратной реализации обработки на повреждаемость
-        zero_cycles_neg = _allocate_zero_cycles(
-            start_full_cycles=np.negative(values[start_cycle_indexes]),
-            end_full_cycles=np.negative(values[end_cycle_indexes]),
-        )
-
+        zero_cycles_neg = _allocate_zero_cycles(-values[start_indexes],-values[end_indexes])
+    
         if fcd:
-
+    
             # Накопленная повреждаемость оцениваемой реализации
             # прямой реализации обработки на повреждаемость
-            damageability_value_pos = _calculate_damageability(
-                zero_cycles=zero_cycles_pos,
-                fcd=fcd,
-            ).sum()
+            damageability_pos = _calculate_damageability(zero_cycles_pos, fcd).sum()
             # обратной реализации обработки на повреждаемость
-            damageability_value_neg = _calculate_damageability(
-                zero_cycles=zero_cycles_neg,
-                fcd=fcd,
-            ).sum()
-
+            damageability_neg = _calculate_damageability(zero_cycles_neg, fcd).sum()
+    
         else:
             
             # Эквивалент накопленной повреждаемости оцениваемой реализации
             # прямой реализации обработки на повреждаемость
-            damageability_value_pos = np.sum(zero_cycles_pos)
+            damageability_pos = zero_cycles_pos.sum()
             # обратной реализации обработки на повреждаемость
-            damageability_value_neg = np.sum(zero_cycles_neg)
-
+            damageability_neg = zero_cycles_neg.sum()
+    
         # Суммарное значение повреждаемости прямой и обратной реализации
-        damageability_value = damageability_value_pos + damageability_value_neg
-
-        # Сохранение элементов реализаций
-        start_cycle_indexes_list.append(start_cycle_indexes)
-        end_cycle_indexes_list.append(end_cycle_indexes)
-        damageability_list.append(damageability_value)
-
+        damageability = damageability_pos + damageability_neg
+    
+        # Сохранение вариантов реализации массивов индексов точек начала и окончания полных циклов
+        start_indexes_implementations.append(start_indexes)
+        end_indexes_implementations.append(end_indexes)
+        # Сохранение вариантов реализации значений накопленной повреждаемости
+        damageability_implementations.append(damageability)
+    
     # Выбор варианта реализации
-    implementation_variant = np.argmax(damageability_list)
-
+    implementation = np.argmax(damageability_implementations)
+    
     # Выбор реализации индексов начала и окончания циклов
-    start_cycle_indexes = start_cycle_indexes_list[implementation_variant]
-    end_cycle_indexes = end_cycle_indexes_list[implementation_variant]
+    start_indexes = start_indexes_implementations[implementation]
+    end_indexes = end_indexes_implementations[implementation]
+    
+    # Обновление массива индексов точек остатков
+    remainder_indexes = np.setdiff1d(remainder_indexes, np.concatenate((start_indexes, end_indexes)),)
 
-    # Обновление массива остаточных индексов
-    indexes = np.setdiff1d(ar1=indexes, ar2=np.concatenate((start_cycle_indexes, end_cycle_indexes)),)
-
-    return start_cycle_indexes, end_cycle_indexes, indexes
-
+    return start_indexes, end_indexes, remainder_indexes
 

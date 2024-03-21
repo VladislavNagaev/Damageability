@@ -68,19 +68,10 @@ def _damageability(
 ) -> dict[str,Any]:
 
     # Выделение экстремумов
-    extremum_indexes = _allocate_extremums(
-        values=values,
-        smoothing_value=smoothing_value,
-        result_type='indexes',
-    )
+    extremum_indexes = _allocate_extremums(values, smoothing_value)
 
     # Выделение полных циклов
-    start_cycle_indexes_, end_cycle_indexes_ = _allocate_full_cycles(
-        values=values[extremum_indexes], 
-        result_type='indexes',
-        sort=sort, 
-        fcd=fcd,
-    )
+    start_cycle_indexes_, end_cycle_indexes_ = _allocate_full_cycles(values[extremum_indexes], sort=sort, fcd=fcd,)
 
     # Индексы полных циклов в исходном массиве данных
     start_cycle_indexes = extremum_indexes[start_cycle_indexes_]

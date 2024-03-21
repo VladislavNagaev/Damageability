@@ -56,20 +56,7 @@ def allocate_extremums(
 
     """
 
-    return _allocate_extremums(
-        values=values,
-        smoothing_value=smoothing_value,
-        result_type=result_type,
-    )
-
-
-def _allocate_extremums(
-    values:NDArray, 
-    smoothing_value:Annotated[float, Ge(0.0)], 
-    result_type:Literal['indexes','values','both'],
-) -> NDArray|tuple[NDArray,NDArray]:
-
-    indexes = __allocate_extremums(values, smoothing_value)
+    indexes = _allocate_extremums(values, smoothing_value)
     
     if result_type == 'indexes':
         return indexes
@@ -86,7 +73,7 @@ ret_type = nb.int64[::1]
 sig = ret_type(*arg_types)
 
 @nb.jit(sig, nopython=True)
-def __allocate_extremums(
+def _allocate_extremums(
     values:NDArray, 
     smoothing_value:Annotated[float, Ge(0.0)], 
 ) -> NDArray[int64]:
