@@ -1,6 +1,7 @@
 import numpy as np
-
 from numpy.typing import NDArray
+
+import numba as nb
 
 from pydantic import validate_call
 
@@ -34,30 +35,33 @@ def allocate_zero_cycles(
     )
 
 
+arg_types = (nb.float64[::1], nb.float64[::1])
+ret_type = nb.float64[::1]
+sig = ret_type(*arg_types)
+
+@nb.jit(sig, nopython=True)
 def _allocate_zero_cycles(
-    start_full_cycles:NDArray, 
-    end_full_cycles:NDArray,
-) -> NDArray:
+    start_full_cycles:NDArray[np.float64], 
+    end_full_cycles:NDArray[np.float64],
+) -> NDArray[np.float64]:
+
+    zero_cycles = list()
     
-    full_cycles = np.vstack((start_full_cycles, end_full_cycles))
+    for start_cycle, end_cycle in zip(start_full_cycles, end_full_cycles):
+        
+        min_cycle = min(start_cycle, end_cycle)
+        max_cycle = max(start_cycle, end_cycle)
+        mean_cycle = (start_cycle+end_cycle)/2
+        amplitude_cycle = (max_cycle-min_cycle)/2
 
-    max_full_cycles = np.max(a=full_cycles, axis=0,)
-    min_full_cycles = np.min(a=full_cycles, axis=0,)
-    mean_full_cycles = np.mean(a=full_cycles, axis=0,)
-    amplitude_full_cycles = np.divide( np.subtract(max_full_cycles, min_full_cycles), 2)
+        if mean_cycle >= 0:
+            zero_cycle = (2*amplitude_cycle*max_cycle)**0.5
+        elif mean_cycle<0 and max_cycle>0:
+            zero_cycle = (2**0.5)*(amplitude_cycle+0.2*mean_cycle)
+        else:
+            zero_cycle = 0
 
-    zero_cycles = np.zeros(shape=full_cycles.shape[1], )
+        zero_cycles.append(zero_cycle)
 
-    indexes_1 = mean_full_cycles >= 0
-    indexes_2 = np.logical_and( ~(mean_full_cycles >= 0), (max_full_cycles > 0) )
-
-    # Домножение на indexes_1 позволяет избавиться от ошибки извлечения корня из отрицательного числа
-    # RuntimeWarning: invalid value encountered in sqrt
-    values_1 = np.sqrt(2 * amplitude_full_cycles * max_full_cycles * indexes_1)
-    values_2 = np.sqrt(2) * (amplitude_full_cycles + 0.2 * mean_full_cycles)
-
-    zero_cycles[indexes_1] = values_1[indexes_1]
-    zero_cycles[indexes_2] = values_2[indexes_2]
-
-    return zero_cycles
+    return np.array(zero_cycles)
 
