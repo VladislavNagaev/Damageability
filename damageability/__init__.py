@@ -6,12 +6,13 @@ from ._damageability_density import damageability_density
 from ._damageability_density_plot import damageability_density_plot
 from ._visualization_full_cycles import visualization_full_cycles
 from ._base import damageability
-from .Damageability import Damageability
+from .Damageability import Damageability, DamageabilityDict
 
 
 
 __all__ = [
     'Damageability',
+    'DamageabilityDict',
     'damageability',
     'allocate_extremums', 
     'allocate_full_cycles',

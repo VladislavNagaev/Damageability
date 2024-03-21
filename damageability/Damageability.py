@@ -7,11 +7,22 @@ from ._damageability_density_plot import _damageability_density_plot
 
 from numpy.typing import NDArray
 from matplotlib.figure import Figure
-from typing import Optional, Optional, Any
+from typing import Optional, Any, TypedDict
 from annotated_types import Annotated, Gt
 
 from pydantic import validate_call
 
+
+class DamageabilityDict(TypedDict):
+    """Результирующий словарь значений повреждаемости."""
+    damageability_positive_value: float
+    damageability_negative_value: float
+    damageability_aga_positive_value: float
+    damageability_aga_negative_value: float
+    equivalent_positive_value: float
+    equivalent_negative_value: float
+    equivalent_aga_positive_value: float
+    equivalent_aga_negative_value: float
 
 
 class Damageability:
@@ -199,7 +210,7 @@ class Damageability:
         return float(self.damageability_aga_negative**(1/self._fcd))
 
     @property
-    def damageability_dict(self,) -> dict[str,Any]:
+    def damageability_dict(self,) -> DamageabilityDict:
         """Результирующий словарь значений повреждаемости."""
         return {
             'damageability_positive_value': self.damageability_full_positive,
